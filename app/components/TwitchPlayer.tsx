@@ -47,9 +47,13 @@ export default function TwitchPlayer({
 
     const initializePlayer = async () => {
       try {
+        console.log('Loading Twitch script...')
         await loadTwitchScript()
+        console.log('Twitch script loaded successfully')
         
         if (playerRef.current && window.Twitch) {
+          console.log('Initializing Twitch player for channel:', channel)
+          
           // Destroy existing player if it exists
           if (playerInstanceRef.current) {
             playerInstanceRef.current.destroy()
@@ -58,7 +62,7 @@ export default function TwitchPlayer({
           // Create new player
           const player = new window.Twitch.Player(playerRef.current, {
             channel: channel,
-            parent: [window.location.hostname],
+            parent: ["hetri-courses.github.io"],
             autoplay: autoplay,
             muted: muted,
             width: width,
@@ -67,13 +71,17 @@ export default function TwitchPlayer({
           })
 
           playerInstanceRef.current = player
+          console.log('Twitch player created successfully')
 
           // Set quality after player is ready
           player.addEventListener(window.Twitch.Player.READY, () => {
+            console.log('Twitch player ready')
             if (quality && quality !== "auto") {
               player.setQuality(quality)
             }
           })
+        } else {
+          console.error('Player ref or Twitch not available')
         }
       } catch (error) {
         console.error('Error initializing Twitch player:', error)
