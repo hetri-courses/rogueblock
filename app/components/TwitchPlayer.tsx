@@ -62,7 +62,7 @@ export default function TwitchPlayer({
           // Create new player
           const player = new window.Twitch.Player(playerRef.current, {
             channel: channel,
-            parent: ["hetri-courses.github.io/rogueblock"],
+            parent: ["hetri-courses.github.io"],
             autoplay: autoplay,
             muted: muted,
             width: width,
