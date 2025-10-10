@@ -82,7 +82,7 @@ export default function TwitchPlayer({
             console.log('Available qualities:', availableQualities)
             
             // Remove auto and select the lowest non-auto quality
-            const nonAutoQualities = availableQualities.filter(q => q !== 'auto')
+            const nonAutoQualities = availableQualities.filter((q: string) => q !== 'auto')
             if (nonAutoQualities.length > 0) {
               const lowestQuality = nonAutoQualities[0]
               console.log('Forcing to lowest quality:', lowestQuality)
