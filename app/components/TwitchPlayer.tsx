@@ -76,28 +76,31 @@ export default function TwitchPlayer({
           // Set quality after player is ready
           player.addEventListener(window.Twitch.Player.READY, () => {
             console.log('Media player ready')
-            // Try to set the lowest available quality
+            
+            // Force to lowest available quality
             const availableQualities = player.getQualities()
             console.log('Available qualities:', availableQualities)
             
-            // Look for the lowest quality available
-            const qualityOrder = ['160p', '360p', '480p', '720p', '1080p']
-            let selectedQuality = null
+            // Remove auto and select the lowest non-auto quality
+            const nonAutoQualities = availableQualities.filter(q => q !== 'auto')
+            if (nonAutoQualities.length > 0) {
+              const lowestQuality = nonAutoQualities[0]
+              console.log('Forcing to lowest quality:', lowestQuality)
+              player.setQuality(lowestQuality)
+            }
             
-            for (const quality of qualityOrder) {
-              if (availableQualities.includes(quality)) {
-                selectedQuality = quality
-                break
+            // Additional bandwidth reduction: scale down the video element
+            setTimeout(() => {
+              const iframe = playerRef.current?.querySelector('iframe')
+              if (iframe) {
+                // Scale down the iframe to reduce effective resolution
+                iframe.style.transform = 'scale(0.5)'
+                iframe.style.transformOrigin = 'top left'
+                iframe.style.width = '200%'
+                iframe.style.height = '200%'
+                console.log('Applied scaling to reduce effective quality')
               }
-            }
-            
-            if (selectedQuality) {
-              console.log('Setting quality to:', selectedQuality)
-              player.setQuality(selectedQuality)
-            } else {
-              console.log('No suitable quality found, using auto')
-              player.setQuality('auto')
-            }
+            }, 1000)
           })
         } else {
           console.error('Player ref or media not available')
