@@ -76,8 +76,27 @@ export default function TwitchPlayer({
           // Set quality after player is ready
           player.addEventListener(window.Twitch.Player.READY, () => {
             console.log('Media player ready')
-            if (quality && quality !== "auto") {
-              player.setQuality(quality)
+            // Try to set the lowest available quality
+            const availableQualities = player.getQualities()
+            console.log('Available qualities:', availableQualities)
+            
+            // Look for the lowest quality available
+            const qualityOrder = ['160p', '360p', '480p', '720p', '1080p']
+            let selectedQuality = null
+            
+            for (const quality of qualityOrder) {
+              if (availableQualities.includes(quality)) {
+                selectedQuality = quality
+                break
+              }
+            }
+            
+            if (selectedQuality) {
+              console.log('Setting quality to:', selectedQuality)
+              player.setQuality(selectedQuality)
+            } else {
+              console.log('No suitable quality found, using auto')
+              player.setQuality('auto')
             }
           })
         } else {
