@@ -19,7 +19,7 @@ export default function Monitor2() {
           channel="animalworks"
           quality="160p"
           autoplay={true}
-          muted={true}
+          muted={false}
           height="500px"
         />
         

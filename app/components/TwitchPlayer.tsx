@@ -21,7 +21,7 @@ export default function TwitchPlayer({
   channel,
   quality = "160p",
   autoplay = true,
-  muted = true,
+  muted = false,
   width = "100%",
   height = "400px"
 }: TwitchPlayerProps) {
@@ -76,19 +76,25 @@ export default function TwitchPlayer({
           // Set quality after player is ready
           player.addEventListener(window.Twitch.Player.READY, () => {
             console.log('Media player ready')
-            
-            // Force to lowest available quality
+
             const availableQualities = player.getQualities()
             console.log('Available qualities:', availableQualities)
-            
-            // Remove auto and select the lowest non-auto quality
-            const nonAutoQualities = availableQualities.filter((q: string) => q !== 'auto')
-            if (nonAutoQualities.length > 0) {
-              const lowestQuality = nonAutoQualities[0]
-              console.log('Forcing to lowest quality:', lowestQuality)
-              player.setQuality(lowestQuality)
+
+            // Check if the requested quality is available
+            if (quality && availableQualities.includes(quality)) {
+              console.log('Setting requested quality:', quality)
+              player.setQuality(quality)
+            } else {
+              // Fallback to lowest available non-auto quality
+              const nonAutoQualities = availableQualities.filter((q: string) => q !== 'auto')
+              if (nonAutoQualities.length > 0) {
+                // Qualities are typically sorted highest to lowest, so take the last one for lowest
+                const lowestQuality = nonAutoQualities[nonAutoQualities.length - 1]
+                console.log('Requested quality not available, falling back to lowest quality:', lowestQuality)
+                player.setQuality(lowestQuality)
+              }
             }
-            
+
           })
         } else {
           console.error('Player ref or media not available')
