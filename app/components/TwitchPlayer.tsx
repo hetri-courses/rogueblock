@@ -89,18 +89,6 @@ export default function TwitchPlayer({
               player.setQuality(lowestQuality)
             }
             
-            // Additional bandwidth reduction: scale down the video element
-            setTimeout(() => {
-              const iframe = playerRef.current?.querySelector('iframe')
-              if (iframe) {
-                // Scale down the iframe to reduce effective resolution
-                iframe.style.transform = 'scale(0.5)'
-                iframe.style.transformOrigin = 'top left'
-                iframe.style.width = '200%'
-                iframe.style.height = '200%'
-                console.log('Applied scaling to reduce effective quality')
-              }
-            }, 1000)
           })
         } else {
           console.error('Player ref or media not available')
