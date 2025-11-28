@@ -24,12 +24,12 @@ export default function RootLayout({
         {/* Content Security Policy to block tracking domains */}
         <meta
           httpEquiv="Content-Security-Policy"
-          content="default-src 'self' https://player.twitch.tv https://assets.twitch.tv; script-src 'self' https://player.twitch.tv https://assets.twitch.tv 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://player.twitch.tv https://assets.twitch.tv; frame-src https://player.twitch.tv; object-src 'none'; base-uri 'self'; form-action 'self';"
+          content="default-src 'self' https://player.twitch.tv https://assets.twitch.tv https://108.181.32.73; script-src 'self' https://player.twitch.tv https://assets.twitch.tv https://108.181.32.73 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://player.twitch.tv https://assets.twitch.tv https://108.181.32.73; frame-src https://player.twitch.tv https://108.181.32.73 https:; object-src 'none'; base-uri 'self'; form-action 'self';"
         />
         {/* Block specific tracking domains */}
         <meta
           httpEquiv="Content-Security-Policy"
-          content="block-all-mixed-content; upgrade-insecure-requests; frame-ancestors 'none';"
+          content="block-all-mixed-content; upgrade-insecure-requests;"
         />
       </head>
       <body className={inter.className}>

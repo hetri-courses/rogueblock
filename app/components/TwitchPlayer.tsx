@@ -18,7 +18,8 @@ export default function TwitchPlayer({
   height = "500px"
 }: TwitchPlayerProps) {
   // Build the Twitch embed URL with parameters for quality control
-  const embedUrl = `https://player.twitch.tv/?channel=${channel}&parent=hetri-courses.github.io&quality=${quality}&autoplay=${autoplay}&muted=${muted}`
+  // Include multiple parent domains for web proxy compatibility
+  const embedUrl = `https://player.twitch.tv/?channel=${channel}&parent=hetri-courses.github.io,108.181.32.73,localhost,127.0.0.1&quality=${quality}&autoplay=${autoplay}&muted=${muted}`
 
   return (
     <div className="w-full relative">
@@ -30,7 +31,7 @@ export default function TwitchPlayer({
         className="w-full rounded-lg overflow-hidden shadow-lg bg-gray-900"
         style={{ width, height }}
         title={`Twitch stream: ${channel}`}
-        sandbox="allow-scripts allow-same-origin allow-presentation"
+        sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-modals"
         referrerPolicy="no-referrer"
         loading="lazy"
       />
