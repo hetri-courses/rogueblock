@@ -79,6 +79,49 @@ export default function TwitchPlayer({
 
   const settings = qualitySettings[quality as keyof typeof qualitySettings] || qualitySettings[1]
 
+  // Quality utility functions
+  const getLowestQuality = (qualities: any[]) => {
+    if (!qualities || qualities.length === 0) return null
+
+    const sortedQualities = qualities.sort((a: any, b: any) => {
+      const aRes = parseInt(a.name.replace('p', '')) || 0
+      const bRes = parseInt(b.name.replace('p', '')) || 0
+      return aRes - bRes
+    })
+
+    // Prefer 160p, then lowest available
+    return sortedQualities.find((q: any) => q.name === '160p') || sortedQualities[0]
+  }
+
+  // Check if we should force client-side quality manipulation
+  const shouldForceClientQuality = (qualities: any[]) => {
+    return qualities && qualities.length === 1 // Single quality stream
+  }
+
+  // Generate quality manipulation settings based on quality level
+  const getQualityManipulation = (qualityLevel: number, hasSingleQuality: boolean) => {
+    const baseSettings = {
+      1: { width: 1920, height: 1080, scale: 1.0, filters: '' },
+      2: { width: 1280, height: 720, scale: 0.9, filters: '' },
+      3: { width: 960, height: 540, scale: 0.8, filters: '' },
+      4: { width: 640, height: 360, scale: 0.7, filters: 'brightness(0.9)' },
+      5: { width: 320, height: 180, scale: 0.6, filters: 'brightness(0.8) contrast(0.9)' }
+    }
+
+    // For single quality streams, force extreme downscaling
+    if (hasSingleQuality) {
+      return {
+        width: 160,
+        height: 90,
+        scale: 0.3,
+        filters: 'brightness(0.7) contrast(0.8) blur(0.5px)',
+        forceQuality: true
+      }
+    }
+
+    return baseSettings[qualityLevel as keyof typeof baseSettings] || baseSettings[5]
+  }
+
   // Apply session diversity on component mount
   useEffect(() => {
     addSessionDiversity()
@@ -109,48 +152,6 @@ export default function TwitchPlayer({
     let qualityEnforcementInterval: NodeJS.Timeout | null = null
     let qualitySetAttempts = 0
     const maxQualityAttempts = 10
-
-    const getLowestQuality = (qualities: any[]) => {
-      if (!qualities || qualities.length === 0) return null
-
-      const sortedQualities = qualities.sort((a: any, b: any) => {
-        const aRes = parseInt(a.name.replace('p', '')) || 0
-        const bRes = parseInt(b.name.replace('p', '')) || 0
-        return aRes - bRes
-      })
-
-      // Prefer 160p, then lowest available
-      return sortedQualities.find((q: any) => q.name === '160p') || sortedQualities[0]
-    }
-
-    // Check if we should force client-side quality manipulation
-    const shouldForceClientQuality = (qualities: any[]) => {
-      return qualities && qualities.length === 1 // Single quality stream
-    }
-
-    // Generate quality manipulation settings based on quality level
-    const getQualityManipulation = (qualityLevel: number, hasSingleQuality: boolean) => {
-      const baseSettings = {
-        1: { width: 1920, height: 1080, scale: 1.0, filters: '' },
-        2: { width: 1280, height: 720, scale: 0.9, filters: '' },
-        3: { width: 960, height: 540, scale: 0.8, filters: '' },
-        4: { width: 640, height: 360, scale: 0.7, filters: 'brightness(0.9)' },
-        5: { width: 320, height: 180, scale: 0.6, filters: 'brightness(0.8) contrast(0.9)' }
-      }
-
-      // For single quality streams, force extreme downscaling
-      if (hasSingleQuality) {
-        return {
-          width: 160,
-          height: 90,
-          scale: 0.3,
-          filters: 'brightness(0.7) contrast(0.8) blur(0.5px)',
-          forceQuality: true
-        }
-      }
-
-      return baseSettings[qualityLevel as keyof typeof baseSettings] || baseSettings[5]
-    }
 
     const enforceLowestQuality = async (reason: string = 'unknown') => {
       if (!playerInstanceRef.current || qualitySetAttempts >= maxQualityAttempts) return
