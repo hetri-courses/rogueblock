@@ -38,48 +38,6 @@ const getRandomBorderStyle = () => {
   return styles[Math.floor(Math.random() * styles.length)]
 }
 
-// Apply page-level viewport quality control
-const applyViewportQualityControl = (zoom: number, sessionId: string) => {
-  if (typeof document === 'undefined') return
-
-  // Remove existing viewport control for this session
-  const existingStyle = document.getElementById(`viewport-quality-${sessionId}`)
-  if (existingStyle) {
-    existingStyle.remove()
-  }
-
-  // Apply new viewport quality control
-  const styleElement = document.createElement('style')
-  styleElement.id = `viewport-quality-${sessionId}`
-  styleElement.textContent = `
-    html {
-      zoom: ${zoom};
-      -moz-transform: scale(${zoom});
-      -webkit-transform: scale(${zoom});
-      transform: scale(${zoom});
-      transform-origin: top left;
-    }
-    body {
-      width: ${100 / zoom}%;
-      height: ${100 / zoom}%;
-    }
-  `
-  document.head.appendChild(styleElement)
-
-  console.log(`Viewport quality control applied: ${zoom} zoom (${sessionId})`)
-}
-
-// Reset viewport quality control
-const resetViewportQualityControl = (sessionId: string) => {
-  if (typeof document === 'undefined') return
-
-  const existingStyle = document.getElementById(`viewport-quality-${sessionId}`)
-  if (existingStyle) {
-    existingStyle.remove()
-    console.log(`Viewport quality control reset (${sessionId})`)
-  }
-}
-
 // Add visual session diversity and request randomization
 const addSessionDiversity = () => {
   const sessionId = generateSessionId()
@@ -391,13 +349,6 @@ export default function TwitchPlayer({
     return () => {
       stopQualityEnforcement()
 
-      // Reset viewport quality control
-      if (typeof window !== 'undefined') {
-        const sessionData = (window as any).__sessionData || {}
-        const sessionId = sessionData.sessionId || 'default'
-        resetViewportQualityControl(sessionId)
-      }
-
       if (playerInstanceRef.current) {
         try {
           playerInstanceRef.current.destroy()
@@ -424,12 +375,7 @@ export default function TwitchPlayer({
     const newManipulation = getQualityManipulation(quality, hasSingleQuality)
     setQualityManipulation(newManipulation)
 
-    // Apply viewport quality control if needed
-    if (typeof window !== 'undefined' && newManipulation.zoom !== 1.0) {
-      const sessionData = (window as any).__sessionData || {}
-      const sessionId = sessionData.sessionId || 'default'
-      applyViewportQualityControl(newManipulation.zoom, sessionId)
-    }
+    // Quality control is now handled by CSS classes, no additional viewport manipulation needed
   }, [quality, hasSingleQuality])
 
   // Check for single quality streams periodically
