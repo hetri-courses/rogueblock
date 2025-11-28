@@ -1,7 +1,6 @@
 'use client'
 
 import TwitchPlayer from '../components/TwitchPlayer'
-import ErrorBoundary from '../components/ErrorBoundary'
 
 export default function Monitor3() {
   return (
@@ -16,16 +15,13 @@ export default function Monitor3() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-        <ErrorBoundary>
-          <TwitchPlayer
-            channel="animalworks"
-            quality="160p"
-            autoplay={false}
-            muted={false}
-            height="500px"
-            playerId="monitor-3-player"
-          />
-        </ErrorBoundary>
+        <TwitchPlayer
+          channel="animalworks"
+          quality="160p"
+          autoplay={false}
+          muted={false}
+          height="500px"
+        />
 
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
