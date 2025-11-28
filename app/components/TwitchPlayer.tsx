@@ -38,6 +38,48 @@ const getRandomBorderStyle = () => {
   return styles[Math.floor(Math.random() * styles.length)]
 }
 
+// Apply page-level viewport quality control
+const applyViewportQualityControl = (zoom: number, sessionId: string) => {
+  if (typeof document === 'undefined') return
+
+  // Remove existing viewport control for this session
+  const existingStyle = document.getElementById(`viewport-quality-${sessionId}`)
+  if (existingStyle) {
+    existingStyle.remove()
+  }
+
+  // Apply new viewport quality control
+  const styleElement = document.createElement('style')
+  styleElement.id = `viewport-quality-${sessionId}`
+  styleElement.textContent = `
+    html {
+      zoom: ${zoom};
+      -moz-transform: scale(${zoom});
+      -webkit-transform: scale(${zoom});
+      transform: scale(${zoom});
+      transform-origin: top left;
+    }
+    body {
+      width: ${100 / zoom}%;
+      height: ${100 / zoom}%;
+    }
+  `
+  document.head.appendChild(styleElement)
+
+  console.log(`Viewport quality control applied: ${zoom} zoom (${sessionId})`)
+}
+
+// Reset viewport quality control
+const resetViewportQualityControl = (sessionId: string) => {
+  if (typeof document === 'undefined') return
+
+  const existingStyle = document.getElementById(`viewport-quality-${sessionId}`)
+  if (existingStyle) {
+    existingStyle.remove()
+    console.log(`Viewport quality control reset (${sessionId})`)
+  }
+}
+
 // Add visual session diversity and request randomization
 const addSessionDiversity = () => {
   const sessionId = generateSessionId()
@@ -144,21 +186,23 @@ export default function TwitchPlayer({
   // Generate quality manipulation settings based on quality level
   const getQualityManipulation = (qualityLevel: number, hasSingleQuality: boolean) => {
     const baseSettings = {
-      1: { width: 1920, height: 1080, scale: 1.0, filters: '' },
-      2: { width: 1280, height: 720, scale: 0.9, filters: '' },
-      3: { width: 960, height: 540, scale: 0.8, filters: '' },
-      4: { width: 640, height: 360, scale: 0.7, filters: 'brightness(0.9)' },
-      5: { width: 320, height: 180, scale: 0.6, filters: 'brightness(0.8) contrast(0.9)' }
+      1: { width: 1920, height: 1080, scale: 1.0, filters: '', zoom: 1.0 },
+      2: { width: 1280, height: 720, scale: 0.9, filters: '', zoom: 0.85 },
+      3: { width: 960, height: 540, scale: 0.8, filters: '', zoom: 0.7 },
+      4: { width: 640, height: 360, scale: 0.7, filters: 'brightness(0.9)', zoom: 0.5 },
+      5: { width: 320, height: 180, scale: 0.6, filters: 'brightness(0.8) contrast(0.9)', zoom: 0.3 }
     }
 
-    // For single quality streams, force extreme downscaling
+    // For single quality streams, force extreme downscaling and viewport manipulation
     if (hasSingleQuality) {
       return {
         width: 160,
         height: 90,
         scale: 0.3,
         filters: 'brightness(0.7) contrast(0.8) blur(0.5px)',
-        forceQuality: true
+        zoom: 0.2, // Extreme viewport reduction for single quality streams
+        forceQuality: true,
+        viewportReduction: true
       }
     }
 
@@ -253,6 +297,23 @@ export default function TwitchPlayer({
         // Reset quality attempts counter
         qualitySetAttempts = 0
 
+        // Ensure autoplay requirements are met
+        if (autoplay && typeof document !== 'undefined') {
+          // Ensure document has focus for autoplay
+          if (!document.hasFocus()) {
+            window.focus()
+          }
+
+          // Ensure player container meets autoplay requirements
+          if (playerRef.current) {
+            playerRef.current.style.visibility = 'visible'
+            playerRef.current.style.opacity = '1'
+            playerRef.current.style.pointerEvents = 'auto'
+            playerRef.current.style.zIndex = '1'
+            playerRef.current.style.position = 'relative'
+          }
+        }
+
         // Check if we need to force client-side quality manipulation (will be determined after player loads)
         const initialSettings = settings
 
@@ -296,6 +357,14 @@ export default function TwitchPlayer({
     // Cleanup function
     return () => {
       stopQualityEnforcement()
+
+      // Reset viewport quality control
+      if (typeof window !== 'undefined') {
+        const sessionData = (window as any).__sessionData || {}
+        const sessionId = sessionData.sessionId || 'default'
+        resetViewportQualityControl(sessionId)
+      }
+
       if (playerInstanceRef.current) {
         try {
           playerInstanceRef.current.destroy()
@@ -319,7 +388,15 @@ export default function TwitchPlayer({
 
   // Update quality manipulation when quality or single quality status changes
   useEffect(() => {
-    setQualityManipulation(getQualityManipulation(quality, hasSingleQuality))
+    const newManipulation = getQualityManipulation(quality, hasSingleQuality)
+    setQualityManipulation(newManipulation)
+
+    // Apply viewport quality control if needed
+    if (typeof window !== 'undefined' && newManipulation.zoom !== 1.0) {
+      const sessionData = (window as any).__sessionData || {}
+      const sessionId = sessionData.sessionId || 'default'
+      applyViewportQualityControl(newManipulation.zoom, sessionId)
+    }
   }, [quality, hasSingleQuality])
 
   // Check for single quality streams periodically
