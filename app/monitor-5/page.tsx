@@ -14,7 +14,7 @@ export default function Monitor5() {
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
         <TwitchPlayer
-          channel="AwfullyBadAtLife"
+          channel="boombasticzeez"
           autoplay={true}
           muted={false}
           quality={5}
