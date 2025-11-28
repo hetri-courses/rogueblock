@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Basic Next.js config for development
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true
+  },
+  basePath: '/rogueblock',
+  assetPrefix: '/rogueblock/',
 }
 
 module.exports = nextConfig
