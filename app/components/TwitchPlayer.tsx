@@ -30,6 +30,9 @@ export default function TwitchPlayer({
         className="w-full rounded-lg overflow-hidden shadow-lg bg-gray-900"
         style={{ width, height }}
         title={`Twitch stream: ${channel}`}
+        sandbox="allow-scripts allow-same-origin allow-presentation"
+        referrerPolicy="no-referrer"
+        loading="lazy"
       />
 
       {/* Status indicator */}
