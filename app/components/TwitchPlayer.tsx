@@ -28,34 +28,77 @@ const getRandomUserAgent = () => {
   return agents[Math.floor(Math.random() * agents.length)]
 }
 
-// Add random headers and parameters to requests
+const getRandomColor = () => {
+  const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#800080']
+  return colors[Math.floor(Math.random() * colors.length)]
+}
+
+const getRandomBorderStyle = () => {
+  const styles = ['solid', 'dashed', 'dotted', 'double']
+  return styles[Math.floor(Math.random() * styles.length)]
+}
+
+// Add visual session diversity and request randomization
 const addSessionDiversity = () => {
   const sessionId = generateSessionId()
   const timestamp = Date.now()
   const randomParam = Math.random().toString(36).substring(2, 8)
+  const visualId = Math.random().toString(36).substring(2, 6)
 
   // Add random query parameters to the current URL
   const url = new URL(window.location.href)
   url.searchParams.set('_session', sessionId)
   url.searchParams.set('_ts', timestamp.toString())
   url.searchParams.set('_rnd', randomParam)
+  url.searchParams.set('_vid', visualId)
 
   // Update the URL without causing a page reload
   window.history.replaceState({}, '', url.toString())
 
-  // Add random headers to fetch requests
-  const originalFetch = window.fetch
-  window.fetch = function(input, init) {
-    const headers = new Headers(init?.headers)
-    headers.set('X-Session-ID', sessionId)
-    headers.set('X-Client-Timestamp', timestamp.toString())
-    headers.set('X-Random-Param', randomParam)
-    headers.set('User-Agent', getRandomUserAgent())
-
-    return originalFetch.call(this, input, { ...init, headers })
+  // Add visual session indicators to the document (client-side only)
+  if (typeof document !== 'undefined') {
+    const styleElement = document.createElement('style')
+    styleElement.id = `session-style-${sessionId}`
+    styleElement.textContent = `
+      .session-${visualId} {
+        --session-accent: ${getRandomColor()};
+        --session-border: ${getRandomBorderStyle()};
+      }
+      .session-${visualId}::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, var(--session-accent), transparent, var(--session-accent));
+        border-radius: 10px;
+        z-index: -1;
+        opacity: 0.1;
+      }
+    `
+    document.head.appendChild(styleElement)
   }
 
-  console.log('Session diversity applied:', { sessionId, timestamp, randomParam })
+  // Add random headers to fetch requests (client-side only)
+  if (typeof window !== 'undefined') {
+    const originalFetch = window.fetch
+    window.fetch = function(input, init) {
+      const headers = new Headers(init?.headers)
+      headers.set('X-Session-ID', sessionId)
+      headers.set('X-Client-Timestamp', timestamp.toString())
+      headers.set('X-Random-Param', randomParam)
+      headers.set('X-Visual-ID', visualId)
+      headers.set('User-Agent', getRandomUserAgent())
+
+      return originalFetch.call(this, input, { ...init, headers })
+    }
+
+    // Store session data globally for components to access
+    ;(window as any).__sessionData = { sessionId, visualId, timestamp }
+  }
+
+  console.log('Session diversity applied:', { sessionId, visualId, timestamp, randomParam })
 }
 
 export default function TwitchPlayer({
@@ -122,9 +165,11 @@ export default function TwitchPlayer({
     return baseSettings[qualityLevel as keyof typeof baseSettings] || baseSettings[5]
   }
 
-  // Apply session diversity on component mount
+  // Apply session diversity on component mount (client-side only)
   useEffect(() => {
-    addSessionDiversity()
+    if (typeof window !== 'undefined') {
+      addSessionDiversity()
+    }
   }, [])
 
   useEffect(() => {
@@ -262,6 +307,10 @@ export default function TwitchPlayer({
     }
   }, [channel, autoplay, muted, quality])
 
+  // Get session data from global scope (client-side only)
+  const sessionData = typeof window !== 'undefined' ? (window as any).__sessionData || {} : {}
+  const visualId = sessionData.visualId || 'default'
+
   // Get dynamic quality manipulation settings
   const [hasSingleQuality, setHasSingleQuality] = useState(false)
   const [qualityManipulation, setQualityManipulation] = useState(() =>
@@ -292,21 +341,29 @@ export default function TwitchPlayer({
   }, [])
 
   return (
-    <div className="w-full">
+    <div className={`w-full session-${visualId}`} style={{ position: 'relative' }}>
       <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
         Quality: {hasSingleQuality ? 'Client-Side Reduced' : settings.label}
         {hasSingleQuality && ' (Single Quality Stream - Using Quality Manipulation)'}
+        <span className="ml-2 text-xs opacity-50">Session: {visualId}</span>
       </div>
       <div
         ref={playerRef}
         className="w-full rounded-lg overflow-hidden"
         style={{
+          // Ensure visibility for autoplay requirements
+          visibility: 'visible',
+          opacity: 1,
+          // Use transform but ensure it doesn't break visibility
           transform: `scale(${qualityManipulation.scale})`,
           transformOrigin: 'top left',
           width: `${100 / qualityManipulation.scale}%`,
           height: `${parseInt(settings.height) / qualityManipulation.scale}px`,
           filter: qualityManipulation.filters,
-          imageRendering: hasSingleQuality ? 'pixelated' : 'auto'
+          imageRendering: hasSingleQuality ? 'pixelated' : 'auto',
+          // Additional autoplay requirements
+          pointerEvents: 'auto',
+          zIndex: 1
         }}
       />
     </div>
