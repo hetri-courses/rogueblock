@@ -97,7 +97,7 @@ const addSessionDiversity = () => {
   // Update the URL without causing a page reload
   window.history.replaceState({}, '', url.toString())
 
-  // Add visual session indicators to the document (client-side only)
+  // Add visual session indicators and quality control containers (client-side only)
   if (typeof document !== 'undefined') {
     const styleElement = document.createElement('style')
     styleElement.id = `session-style-${sessionId}`
@@ -117,6 +117,41 @@ const addSessionDiversity = () => {
         border-radius: 10px;
         z-index: -1;
         opacity: 0.1;
+      }
+      .quality-container-${visualId} {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: auto;
+      }
+      .quality-scaler-${visualId} {
+        transform-origin: top left;
+        transition: transform 0.3s ease;
+      }
+      .quality-scaler-${visualId}.quality-5 {
+        transform: scale(0.3);
+        width: calc(100% / 0.3);
+        height: calc(100% / 0.3);
+      }
+      .quality-scaler-${visualId}.quality-4 {
+        transform: scale(0.5);
+        width: calc(100% / 0.5);
+        height: calc(100% / 0.5);
+      }
+      .quality-scaler-${visualId}.quality-3 {
+        transform: scale(0.7);
+        width: calc(100% / 0.7);
+        height: calc(100% / 0.7);
+      }
+      .quality-scaler-${visualId}.quality-2 {
+        transform: scale(0.85);
+        width: calc(100% / 0.85);
+        height: calc(100% / 0.85);
+      }
+      .quality-scaler-${visualId}.quality-single {
+        transform: scale(0.2);
+        width: calc(100% / 0.2);
+        height: calc(100% / 0.2);
       }
     `
     document.head.appendChild(styleElement)
@@ -185,24 +220,22 @@ export default function TwitchPlayer({
 
   // Generate quality manipulation settings based on quality level
   const getQualityManipulation = (qualityLevel: number, hasSingleQuality: boolean) => {
+    // Quality manipulation is now handled by CSS classes
+    // This function now just tracks the settings for UI display
     const baseSettings = {
-      1: { width: 1920, height: 1080, scale: 1.0, filters: '', zoom: 1.0 },
-      2: { width: 1280, height: 720, scale: 0.9, filters: '', zoom: 0.85 },
-      3: { width: 960, height: 540, scale: 0.8, filters: '', zoom: 0.7 },
-      4: { width: 640, height: 360, scale: 0.7, filters: 'brightness(0.9)', zoom: 0.5 },
-      5: { width: 320, height: 180, scale: 0.6, filters: 'brightness(0.8) contrast(0.9)', zoom: 0.3 }
+      1: { filters: '' },
+      2: { filters: '' },
+      3: { filters: '' },
+      4: { filters: 'brightness(0.9)' },
+      5: { filters: 'brightness(0.8) contrast(0.9)' }
     }
 
-    // For single quality streams, force extreme downscaling and viewport manipulation
+    // For single quality streams, apply additional filters
     if (hasSingleQuality) {
       return {
-        width: 160,
-        height: 90,
-        scale: 0.3,
         filters: 'brightness(0.7) contrast(0.8) blur(0.5px)',
-        zoom: 0.2, // Extreme viewport reduction for single quality streams
         forceQuality: true,
-        viewportReduction: true
+        containerReduction: true
       }
     }
 
@@ -420,29 +453,31 @@ export default function TwitchPlayer({
   return (
     <div className={`w-full session-${visualId}`} style={{ position: 'relative' }}>
       <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-        Quality: {hasSingleQuality ? 'Client-Side Reduced' : settings.label}
-        {hasSingleQuality && ' (Single Quality Stream - Using Quality Manipulation)'}
+        Quality: {hasSingleQuality ? 'Container Reduced' : settings.label}
+        {hasSingleQuality && ' (Single Quality Stream - Using Container Manipulation)'}
         <span className="ml-2 text-xs opacity-50">Session: {visualId}</span>
       </div>
-      <div
-        ref={playerRef}
-        className="w-full rounded-lg overflow-hidden"
-        style={{
-          // Ensure visibility for autoplay requirements
-          visibility: 'visible',
-          opacity: 1,
-          // Use transform but ensure it doesn't break visibility
-          transform: `scale(${qualityManipulation.scale})`,
-          transformOrigin: 'top left',
-          width: `${100 / qualityManipulation.scale}%`,
-          height: `${parseInt(settings.height) / qualityManipulation.scale}px`,
-          filter: qualityManipulation.filters,
-          imageRendering: hasSingleQuality ? 'pixelated' : 'auto',
-          // Additional autoplay requirements
-          pointerEvents: 'auto',
-          zIndex: 1
-        }}
-      />
+      <div className={`quality-container-${visualId}`}>
+        <div
+          className={`quality-scaler-${visualId} ${hasSingleQuality ? 'quality-single' : `quality-${quality}`}`}
+        >
+          <div
+            ref={playerRef}
+            className="w-full rounded-lg overflow-hidden"
+            style={{
+              // Ensure visibility for autoplay requirements
+              visibility: 'visible',
+              opacity: 1,
+              // Additional autoplay requirements
+              pointerEvents: 'auto',
+              zIndex: 1,
+              // Keep original player dimensions
+              height: settings.height,
+              width: '100%'
+            }}
+          />
+        </div>
+      </div>
     </div>
   )
 }
