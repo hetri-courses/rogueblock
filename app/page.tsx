@@ -50,7 +50,7 @@ export default function Home() {
           {[1, 2, 3, 4, 5].map((num) => (
             <a
               key={num}
-              href={`/monitor-${num}/`}
+              href={`/rogueblock/monitor-${num}/`}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
             >
               Content {num}
