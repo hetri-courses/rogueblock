@@ -67,6 +67,61 @@ export default function TwitchPlayer({
           height: settings.height,
           width: "100%"
         })
+
+        // Force lowest quality once player is ready
+        const forceLowestQuality = () => {
+          if (playerInstanceRef.current) {
+            try {
+              const qualities = playerInstanceRef.current.getQualities()
+              if (qualities && qualities.length > 0) {
+                // Sort by quality (lowest first) and find 160p or lowest available
+                const sortedQualities = qualities.sort((a: any, b: any) => {
+                  const aRes = parseInt(a.name.replace('p', ''))
+                  const bRes = parseInt(b.name.replace('p', ''))
+                  return aRes - bRes
+                })
+
+                // Prefer 160p, otherwise take the lowest available
+                const targetQuality = sortedQualities.find((q: any) => q.name === '160p') || sortedQualities[0]
+                if (targetQuality) {
+                  playerInstanceRef.current.setQuality(targetQuality.name)
+                  console.log(`Set quality to: ${targetQuality.name}`)
+                }
+              }
+            } catch (error) {
+              console.warn('Failed to set quality:', error)
+            }
+          }
+        }
+
+        // Set quality after a short delay to ensure player is ready
+        setTimeout(forceLowestQuality, 2000)
+
+        // Also listen for quality changes and force back to lowest
+        playerInstanceRef.current.addEventListener('quality', () => {
+          setTimeout(() => {
+            if (playerInstanceRef.current) {
+              try {
+                const qualities = playerInstanceRef.current.getQualities()
+                if (qualities && qualities.length > 0) {
+                  const sortedQualities = qualities.sort((a: any, b: any) => {
+                    const aRes = parseInt(a.name.replace('p', ''))
+                    const bRes = parseInt(b.name.replace('p', ''))
+                    return aRes - bRes
+                  })
+                  const targetQuality = sortedQualities.find((q: any) => q.name === '160p') || sortedQualities[0]
+                  const currentQuality = playerInstanceRef.current.getQuality()
+                  if (currentQuality !== targetQuality.name) {
+                    playerInstanceRef.current.setQuality(targetQuality.name)
+                    console.log(`Forced quality back to: ${targetQuality.name}`)
+                  }
+                }
+              } catch (error) {
+                console.warn('Failed to force quality:', error)
+              }
+            }
+          }, 500)
+        })
       }
     }
   }, [channel, autoplay, muted, quality])
